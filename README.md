@@ -1,5 +1,5 @@
-**PyCalc**
+**PyCalc** \n
 Simpel lommeregner med GUI i Python.
 
-**Anvendte biblioteker**
+**Anvendte biblioteker** \n
 TKInter, Tkinter.font, re, functools.

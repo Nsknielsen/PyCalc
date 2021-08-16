@@ -1,5 +1,14 @@
 #!python3
 
+### IDEER TIL RENERE KODE ###
+
+#Kog de forskellige calculation functions ned til én for at undgå gentagelse i koden.
+
+#Lav de resterende knapper med et loop ved at have en dictionary med par af knaptekst og funktion som: {"CE" : click_ce}. 
+    #Kræver 3 elementer i dictionary el. en variabel der undervejs i loopet sænkes under et if-tjeks grænse
+    #fordi "="-knappen er større i GUI end de andre.
+
+
 ### IMPORT LIBRARIES ###
 
 import tkinter as tk                #GUI værktøj
@@ -8,17 +17,21 @@ import re                           #Regex til at tjekke input
 from functools import partial       #Brugt til at kunne give knapperne en funktion med argumenter igennem et for-loop.
 
 
-### CODE ###
 
-# GLOBAL VARIABLES #                #Anvendes i click_equals() samt i loopet der laver knapper 
+### PYCALC CODE ###
+
+# GLOBAL VARIABLES #                #Regex-tjek anvendes i click_equals() samt i loopet der laver knapper. 
                                             
 calc_check = re.compile(r"[\+\-\/\*\%]")
-num_check = re.compile(r"[0-9\.]")      # Bruger den her i stedet for isdigit() for at inkludere "." i tallene i click_equals()
+num_check = re.compile(r"[0-9\.]")  # Bruger num_check i stedet for isdigit() for at inkludere "." i tallene i click_equals()
+
+first = True                        #Bruges til at tjekke om brugeren bygger videre på foregående regnestykke eller starter et nyt
 
 
 # CLICK FUNCTIONS #
 
-def click_calc(c, *args):           # Indsætter/erstatter regnetegn                                                           
+def click_calc(c, *args):           # Indsætter/erstatter regnetegn                                                         
+    global first
     text = lbl_text["text"]
 
     if len(text) == 1 and text[-1] == " ":
@@ -34,16 +47,19 @@ def click_calc(c, *args):           # Indsætter/erstatter regnetegn
                 tlist[i] = c
                 text = "".join(tlist)
                 break
- 
+    if not first:
+        first = True
     lbl_text["text"] = text
 
     
 def click_num(c, *args):            # Indsætter tal                     
+    set_first()
     lbl_text["text"] += c
 
         
-def click_comma(c, *args):          # Indsætter komma
-    text = lbl_text["text"]
+def click_comma(c, *args):          # Indsætter komma og eventuelt foranstående 0.
+    set_first()
+    text = lbl_text["text"] 
     if num_check.search(text[-1]):
         text += c
     elif text[-1] == ".":
@@ -52,8 +68,8 @@ def click_comma(c, *args):          # Indsætter komma
         text += f"0{c}"
     lbl_text["text"] = text
 
-
 def click_equals(*args):             # Aflæser lbl_text og kalder den passende regneform                                
+    global first
     try:
         text = lbl_text["text"]     
         num1 = ""
@@ -76,7 +92,8 @@ def click_equals(*args):             # Aflæser lbl_text og kalder den passende 
         for k in calc_options:          
             if k in calc_choice:
                 operation = calc_options[k]              
-        lbl_text["text"] = operation(num1, num2)  
+        lbl_text["text"] = operation(num1, num2)
+        first = False
     except:
         pass
 
@@ -124,21 +141,30 @@ def percent(x, y):
     return res + "%"
 
 
+# OTHER FUNCTIONS #
+
+def set_first():                        #Bruges i click_num() og click_comma() til at sætte first = True 
+    global first                        #for at vide om brugeren vil bygge videre på det tidligere regnestykke eller ej
+    if not first:                       
+        click_ce()
+        first = True
+
+        
 # GUI LAYOUT #
 
     # Root window and primary frames in grid
-root = tk.Tk()                                              # Window
+root = tk.Tk()                                              # Vindue
 root.title("PyCalc")
 
 root.rowconfigure(0, minsize=300, weight=1)
 root.columnconfigure(0, minsize=300, weight=1)
 root.columnconfigure(1, minsize=250, weight=1)
 
-fr_btns = tk.Frame(root, relief=tk.RAISED, borderwidth=2)   #Frame for buttons
+fr_btns = tk.Frame(root, relief=tk.RAISED, borderwidth=2)   #Ramme til knapper
 fr_btns.columnconfigure(5, minsize=20, weight=1)
 fr_btns.grid(row=0, column=0, sticky="nsew")
 
-fr_textlbl = tk.Frame(root)                                 #Frame for text label
+fr_textlbl = tk.Frame(root)                                 #Ramme til tekst
 fr_textlbl.grid(row=0, column=1)
 
 
@@ -152,8 +178,8 @@ root.option_add("TkDefaultFont", default_font)
 list_btns = ["7", "8", "9", "*", "4", "5", "6", "/", "1", "2", "3", "-", "0", ".", "%", "+"]
 bnum = 0
 
-for i in range(4):              # Havde én clickfunktion til tekstinput, men den blev meget lang 
-    for j in range(4):          # så nu tjekker den tegntype her i stedet (også for kun at gøre det én gang).
+for i in range(4):              # Først have jeg én clickfunktion til tekstinput (tal, regnetegn, komma), men den blev meget lang 
+    for j in range(4):          # så nu tjekker den knappens tegntype her i stedet (også for kun at gøre det én gang).
         b = list_btns[bnum]
         if b.isdigit():
             com = click_num
@@ -170,16 +196,15 @@ for i in range(4):              # Havde én clickfunktion til tekstinput, men de
 
 
     #Buttons with individual functions
-btn_ce = tk.Button(fr_btns, text="CE", command=click_ce, width=5, height=2, cursor="hand2")
+btn_ce = tk.Button(fr_btns, text="CE", command=click_ce, width=5, height=2, cursor="hand2")         #CE-knap
 btn_ce.grid(row=0, column=5, sticky="nsew")
 root.bind("<Delete>", click_ce)
 
-
-btn_del = tk.Button(fr_btns, text="Del", command=click_del, width=5, height=2, cursor="hand2")
+btn_del = tk.Button(fr_btns, text="Del", command=click_del, width=5, height=2, cursor="hand2")      #Slet-knap
 btn_del.grid(row=1, column=5, sticky="nsew")
 root.bind("<BackSpace>", click_del)
            
-btn_equals = tk.Button(fr_btns, text="=", command=click_equals, width=5, height=2, cursor="hand2")
+btn_equals = tk.Button(fr_btns, text="=", command=click_equals, width=5, height=2, cursor="hand2")  #"="-knap
 btn_equals.grid(row=2, column=5, rowspan=2, sticky="nsew")
 root.bind("<Return>", click_equals)
 

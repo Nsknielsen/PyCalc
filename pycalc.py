@@ -1,96 +1,91 @@
 #!python3
 
-#----TO DO----
+### IMPORT LIBRARIES ###
 
-#CORE FUNCTIONALITY
-
-    #figure out how to clear after a calculation and save the cleared text to past_res, then each time in click_equals check if past_res
-        # call click_ce to recycle code
-        #this works best if i distinguish between C and CE (clear current + memory vs. clear current)
-    # add "0" prior to calc sign if calc sign is first entry (this conflicts with above memory implementation,
-        #maybe do it in click_equals instead with try except and adding 0)
-
-# ERROR HANDLING
-    #handle sequences like "5 + 3 - 2" with multiple calc signs - like windows calc make it call click_equals in that case, and add the final calc sign to text?
-
-#SMOOTHER CODE:
-    # to make click_regular function less messy (should do 1 thing), turn btn_list into a dictionary with "sign : function" like "1: click_num"
-            # just needs to split into num, calc, comma
-    #MAYBE ONE DICT JUST? also make a dict for just the 3 special buttons to make those in loop too (with the attributes sign, function, rowspan)
-
-    # maybe use formatting like f"" to turn the 4 basic calc funcs into one that reads its calc sign from lbl_text
-
-#EXTRA DETAILS
-    # expand window when lbl_text gets too big for it OR move unto next line (multiline label how?)
-            
-
-### IMPORT LIBS ###
-
-import tkinter as tk
-import tkinter.font as tkFont
-import re
-from functools import partial
+import tkinter as tk                #GUI værktøj
+import tkinter.font as tkFont       #Ændre skrifttype i GUI
+import re                           #Regex til at tjekke input
+from functools import partial       #Brugt til at kunne give knapperne en funktion med argumenter igennem et for-loop.
 
 
 ### CODE ###
 
+# GLOBAL VARIABLES #                #Anvendes i click_equals() samt i loopet der laver knapper 
+                                            
+calc_check = re.compile(r"[\+\-\/\*\%]")
+num_check = re.compile(r"[0-9\.]")      # Bruger den her i stedet for isdigit() for at inkludere "." i tallene i click_equals()
+
+
 # CLICK FUNCTIONS #
 
-def click_regular(c, *args):               # Reacts to text input depending on type                                                      
+def click_calc(c, *args):           # Indsætter/erstatter regnetegn                                                           
     text = lbl_text["text"]
-    if calc_check.search(c):
-        if num_check.search(text[-1]) and calc_check.search(text):
-            click_equals()
-        elif num_check.search(text[-1]):
-            text += f" {c} " 
-        else:
-            text = lbl_text["text"][:-3]
+
+    if len(text) == 1 and text[-1] == " ":
+            text += f"0 {c} " 
+
+    elif num_check.search(text[-1]) and not calc_check.search(text):
             text += f" {c} "
             
-    elif c.isdigit():                     
-        text += c
-        
-    elif c == ".":
-        if num_check.search(text[-1]):
-            text += c
-        elif text[-1] == ".":
-            pass
-        else:
-            text += f"0{c}"
-
+    else:
+        tlist = list(text)
+        for i in range(len(tlist)):
+            if calc_check.search(tlist[i]):
+                tlist[i] = c
+                text = "".join(tlist)
+                break
+ 
     lbl_text["text"] = text
 
-def click_equals(*args):             # Finds num1 + num2 + calculation type and calculates                                    
+    
+def click_num(c, *args):            # Indsætter tal                     
+    lbl_text["text"] += c
+
+        
+def click_comma(c, *args):          # Indsætter komma
+    text = lbl_text["text"]
+    if num_check.search(text[-1]):
+        text += c
+    elif text[-1] == ".":
+        pass
+    else:
+        text += f"0{c}"
+    lbl_text["text"] = text
+
+
+def click_equals(*args):             # Aflæser lbl_text og kalder den passende regneform                                
     try:
-        calc_options = {'+': add, '-': subtract, '*': multiply, '/': divide, "%": percent}
         text = lbl_text["text"]     
         num1 = ""
         calc_choice = ""
         num2 = ""
-        for c in text:
+        
+        for c in text:                      
             if num_check.search(c):
                 num1 += c
             elif calc_check.search(c):
                 calc_choice += c
                 calc_index = text.index(c)
                 break
-        for c in text[calc_index:]:
+            
+        for c in text[calc_index:]:         
             if num_check.search(c):
                 num2 += c
-        for k in calc_options:
+
+        calc_options = {'+': add, '-': subtract, '*': multiply, '/': divide, "%": percent}       
+        for k in calc_options:          
             if k in calc_choice:
-                operation = calc_options[k]
-        s = operation(num1, num2)
-        lbl_text["text"] = s
-        past_res.append(lbl_text["text"])               # Edited to have memory of past_res, now how to make it use that in calculations?
-        print(past_res)
+                operation = calc_options[k]              
+        lbl_text["text"] = operation(num1, num2)  
     except:
         pass
+
     
-def click_ce(*args):             # Deletes all text
+def click_ce(*args):             # Sletter al text i lbl_text
     lbl_text["text"] = " "
-    
-def click_del(*args):            # Deletes last character of text
+
+
+def click_del(*args):            # Sletter sidste tegn i lbl_text
     try:
         if lbl_text["text"][-1] == " ":
             text = lbl_text["text"][:-3]
@@ -101,90 +96,98 @@ def click_del(*args):            # Deletes last character of text
         pass
 
         
-# CALC FUNCTIONS #
+# CALCULATION FUNCTIONS #                   # Regnefunktioner til forskellige regnetyper
 
-def add(x, y):
+def add(x, y):                             
     res = str(round((float(x) + float(y)), 2))
-    print("k")
     return res.rstrip("0").rstrip(".") if ".0" in res else res
-    
+
 
 def subtract(x, y):
     res = str(round((float(x) - float(y)), 2))
     return res.rstrip("0").rstrip(".") if ".0" in res else res
 
+
 def multiply(x, y):
     res = str(round((float(x) * float(y)), 2))
     return res.rstrip("0").rstrip(".") if ".0" in res else res
+
 
 def divide(x, y):
     res = str(round((float(x) / float(y)), 2))
     return res.rstrip("0").rstrip(".") if ".0" in res else res
 
+
 def percent(x, y):
     res = str(round(((float(x) / float(y) * 100)), 2))
-    return res.rstrip("0").rstrip(".") if ".0" in res else res
+    res = res.rstrip("0").rstrip(".") if ".0" in res else res
+    return res + "%"
 
 
 # GUI LAYOUT #
 
-    # Root and frames
-root = tk.Tk()
+    # Root window and primary frames in grid
+root = tk.Tk()                                              # Window
 root.title("PyCalc")
-fr_btns = tk.Frame(root, relief=tk.RAISED, borderwidth=2)
-fr_textlbl = tk.Frame(root)
 
 root.rowconfigure(0, minsize=300, weight=1)
 root.columnconfigure(0, minsize=300, weight=1)
 root.columnconfigure(1, minsize=250, weight=1)
+
+fr_btns = tk.Frame(root, relief=tk.RAISED, borderwidth=2)   #Frame for buttons
+fr_btns.columnconfigure(5, minsize=20, weight=1)
+fr_btns.grid(row=0, column=0, sticky="nsew")
+
+fr_textlbl = tk.Frame(root)                                 #Frame for text label
+fr_textlbl.grid(row=0, column=1)
+
 
     # Set default font
 default_font = tkFont.nametofont("TkDefaultFont")
 default_font.configure(size=15)
 root.option_add("TkDefaultFont", default_font)
 
-def printit(*args):
-    print("yes")
     
-    #Buttons with click_regular function
+    #Buttons with text-adding functions
 list_btns = ["7", "8", "9", "*", "4", "5", "6", "/", "1", "2", "3", "-", "0", ".", "%", "+"]
 bnum = 0
 
-for i in range(4):
-    for j in range(4):
-        btn = tk.Button(fr_btns, text=list_btns[bnum], command=partial(click_regular, list_btns[bnum]), width=5, height=2, cursor="hand2")
+for i in range(4):              # Havde én clickfunktion til tekstinput, men den blev meget lang 
+    for j in range(4):          # så nu tjekker den tegntype her i stedet (også for kun at gøre det én gang).
+        b = list_btns[bnum]
+        if b.isdigit():
+            com = click_num
+        elif calc_check.search(b):
+            com = click_calc
+        elif b == ".":
+            com = click_comma
+        btn = tk.Button(fr_btns, text=b, command=partial(com, b), width=5, height=2, cursor="hand2")
         btn.grid(row=i, column=j, padx=1, pady=1, sticky="nsew")
-        root.bind(list_btns[bnum], partial(click_regular, list_btns[bnum]))
+        root.bind(b, partial(com, b))
         fr_btns.rowconfigure(i, minsize=20, weight=1)   
         fr_btns.columnconfigure(j, minsize=20, weight=1)
         bnum += 1
+
 
     #Buttons with individual functions
 btn_ce = tk.Button(fr_btns, text="CE", command=click_ce, width=5, height=2, cursor="hand2")
 btn_ce.grid(row=0, column=5, sticky="nsew")
 root.bind("<Delete>", click_ce)
 
+
 btn_del = tk.Button(fr_btns, text="Del", command=click_del, width=5, height=2, cursor="hand2")
 btn_del.grid(row=1, column=5, sticky="nsew")
 root.bind("<BackSpace>", click_del)
-
-btn_equals = tk.Button(fr_btns, text="=", command=click_equals, width=5, height=4, cursor="hand2")
+           
+btn_equals = tk.Button(fr_btns, text="=", command=click_equals, width=5, height=2, cursor="hand2")
 btn_equals.grid(row=2, column=5, rowspan=2, sticky="nsew")
 root.bind("<Return>", click_equals)
 
+
     # Text label
-lbl_text = tk.Label(fr_textlbl, text=" ", width=7)
+lbl_text = tk.Label(fr_textlbl, text=" ", width=10)
 lbl_text.config(font=("TkDefaultFont", 20))
 lbl_text.grid()
 
-    # Gridding frames in root
-fr_btns.columnconfigure(5, minsize=20, weight=1)
-fr_btns.grid(row=0, column=0, sticky="nsew")
-fr_textlbl.grid(row=0, column=1)
-
-
-# MAINLOOP AND GLOBALS #
-past_res = []                       #Not in use until memory is implemented
-calc_check = re.compile(r"[\+\-\/\*\%]")
-num_check = re.compile(r"[0-9\.]") # Used instead of .isdigit() to include "."
+# MAINLOOP#
 root.mainloop()

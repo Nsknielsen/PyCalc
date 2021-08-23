@@ -1,19 +1,11 @@
 #!python3
 
-### IDEER TIL RENERE KODE ###
-
-#Kog de forskellige calculation functions ned til én for at undgå gentagelse i koden.
-
-#Lav de resterende knapper med et loop ved at have en dictionary med par af knaptekst og funktion som: {"CE" : click_ce}. 
-    #Kræver 3 elementer i dictionary el. en variabel der undervejs i loopet sænkes under et if-tjeks grænse
-    #fordi "="-knappen er større i GUI end de andre.
-
 
 ### IMPORT LIBRARIES ###
 
 import tkinter as tk                #GUI værktøj
-import tkinter.font as tkFont       #Ændre skrifttype i GUI
-import re                           #Regex til at tjekke input
+import tkinter.font as tkFont       #Indstille skrifttype i GUI
+import re                           #Regex til at tjekke inputtype
 from functools import partial       #Brugt til at kunne give knapperne en funktion med argumenter igennem et for-loop.
 
 
